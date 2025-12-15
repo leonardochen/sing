@@ -25,13 +25,35 @@ A Next.js application for managing a karaoke queue with YouTube video playback.
 
 ## Getting Started
 
-### Install Dependencies
+### Option 1: Docker (Recommended)
+
+#### Using Docker Compose
+
+```bash
+docker-compose up
+```
+
+#### Using Docker directly
+
+```bash
+# Build the image
+docker build -t karaoke-app .
+
+# Run the container
+docker run -p 3000:3000 karaoke-app
+```
+
+Open [http://localhost:3000](http://localhost:3000) - it will redirect to `/splash`
+
+### Option 2: Local Development
+
+#### Install Dependencies
 
 ```bash
 npm install
 ```
 
-### Run Development Server
+#### Run Development Server
 
 ```bash
 npm run dev
@@ -42,7 +64,7 @@ Open [http://localhost:3000](http://localhost:3000) - it will redirect to `/spla
 ### Usage
 
 1. **Main Display**: Navigate to `/splash` (or just `/`) to show the video player
-2. **Add Songs**: Navigate to `/add` to submit new songs to the queue
+2. **Add Songs**: Navigate to `/add` to submit new songs to the queue (or scan the QR code)
 
 ## API Endpoints
 
@@ -97,6 +119,14 @@ The `queue.txt` file stores one JSON object per line:
 - **YouTube IFrame API** - Video player control and event handling
 
 ## Building for Production
+
+### Using Docker (Recommended)
+
+```bash
+docker-compose up -d
+```
+
+### Using Node.js directly
 
 ```bash
 npm run build
