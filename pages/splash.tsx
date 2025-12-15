@@ -54,10 +54,15 @@ export default function Splash() {
         currentVideoIdRef.current = data.current.videoId;
         loadVideo(data.current.videoId);
       } else if (!data.current && currentVideoIdRef.current) {
-        // Queue is empty
+        // Queue is empty - clear the player
         currentVideoIdRef.current = null;
+        setPlayerError(false); // Clear any error state
         if (playerRef.current) {
-          playerRef.current.stopVideo();
+          try {
+            playerRef.current.stopVideo();
+          } catch (e) {
+            // Ignore errors when stopping player
+          }
         }
       }
       
@@ -220,17 +225,17 @@ export default function Splash() {
           <div 
             ref={playerContainerRef}
             className="absolute inset-0"
-            style={{ display: playerError ? 'none' : 'block' }}
+            style={{ display: playerError ? 'none' : 'block', visibility: currentVideo ? 'visible' : 'hidden' }}
           />
           
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center text-white text-2xl">
+            <div className="absolute inset-0 flex items-center justify-center text-white text-2xl bg-black">
               Loading...
             </div>
           )}
           
           {!isLoading && !currentVideo && (
-            <div className="absolute inset-0 flex items-center justify-center text-white text-2xl">
+            <div className="absolute inset-0 flex items-center justify-center text-white text-2xl bg-black">
               No videos in queue. Add some songs!
             </div>
           )}

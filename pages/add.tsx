@@ -1,11 +1,27 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
+
+const STORAGE_KEY = 'karaoke_username';
 
 export default function Add() {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [userName, setUserName] = useState('');
+  const [savedUserName, setSavedUserName] = useState<string | null>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Load saved username on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      setSavedUserName(saved);
+      setUserName(saved);
+    } else {
+      setIsEditingName(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -40,9 +56,13 @@ export default function Add() {
       const data = await response.json();
 
       if (response.ok) {
+        // Save username to localStorage
+        localStorage.setItem(STORAGE_KEY, userName.trim());
+        setSavedUserName(userName.trim());
+        setIsEditingName(false);
+        
         setMessage({ type: 'success', text: `Song added to queue! Thanks, ${userName}!` });
         setYoutubeUrl('');
-        setUserName('');
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to add song to queue' });
       }
@@ -61,6 +81,13 @@ export default function Add() {
       </Head>
 
       <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 flex items-center justify-center p-4 relative">
+        <Link
+          href="/splash"
+          className="absolute top-4 left-4 bg-white/90 hover:bg-white text-purple-600 font-semibold py-2 px-4 rounded-lg shadow-lg transition-all"
+        >
+          ← Back to Now Playing
+        </Link>
+        
         <div className="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-lg">
           <div className="text-center mb-10">
             <h1 className="text-5xl font-bold text-gray-800 mb-3">🎤 Add Your Song</h1>
@@ -72,16 +99,48 @@ export default function Add() {
               <label htmlFor="userName" className="block text-lg font-semibold text-gray-700 mb-3">
                 Your Name
               </label>
-              <input
-                type="text"
-                id="userName"
-                value={userName}
-                onChange={(e) => setUserName(e.target.value)}
-                placeholder="Enter your name"
-                className="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-200 transition-all text-gray-900"
-                disabled={isSubmitting}
-                required
-              />
+              
+              {savedUserName && !isEditingName ? (
+                // Show saved name with change button
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 px-6 py-4 text-lg border-2 border-purple-300 bg-purple-50 rounded-xl text-gray-900 font-semibold">
+                    {savedUserName}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingName(true)}
+                    className="px-6 py-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-xl transition-colors"
+                  >
+                    Change
+                  </button>
+                </div>
+              ) : (
+                // Show input field
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    id="userName"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    placeholder="Enter your name"
+                    className="w-full px-6 py-4 text-lg border-2 border-gray-300 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-200 transition-all text-gray-900"
+                    disabled={isSubmitting}
+                    required
+                  />
+                  {savedUserName && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserName(savedUserName);
+                        setIsEditingName(false);
+                      }}
+                      className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                    >
+                      Cancel (keep {savedUserName})
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
