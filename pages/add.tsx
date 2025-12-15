@@ -1,6 +1,5 @@
 import { useState, FormEvent, useEffect } from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
 
 const STORAGE_KEY = 'karaoke_username';
 
@@ -80,14 +79,7 @@ export default function Add() {
         <title>Add Song - Karaoke Queue</title>
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 flex items-center justify-center p-4 relative">
-        <Link
-          href="/splash"
-          className="absolute top-4 left-4 bg-white/90 hover:bg-white text-purple-600 font-semibold py-2 px-4 rounded-lg shadow-lg transition-all"
-        >
-          ← Back to Now Playing
-        </Link>
-        
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-red-500 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-lg">
           <div className="text-center mb-10">
             <h1 className="text-5xl font-bold text-gray-800 mb-3">🎤 Add Your Song</h1>

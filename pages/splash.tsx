@@ -38,12 +38,37 @@ export default function Splash() {
   const playerRef = useRef<any>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const currentVideoIdRef = useRef<string | null>(null);
+  const lastActivityTimeRef = useRef<number>(Date.now());
+  const autoEnqueueTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-enqueue a random song from the playlist
+  const autoEnqueueSong = async () => {
+    try {
+      console.log('Auto-enqueueing random song from playlist...');
+      const response = await fetch('/api/queue/auto-enqueue', { method: 'POST' });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Auto-enqueued:', data.entry.title);
+        // Fetch the updated queue
+        await fetchCurrentVideo();
+      } else {
+        console.error('Failed to auto-enqueue');
+      }
+    } catch (error) {
+      console.error('Error auto-enqueueing:', error);
+    }
+  };
 
   // Fetch current video from queue
   const fetchCurrentVideo = async () => {
     try {
       const response = await fetch('/api/queue/current');
       const data: QueueResponse = await response.json();
+      
+      // Check if queue length increased (user added a song)
+      const oldQueueLength = queue.length;
+      const newQueueLength = (data.queue || []).length + (data.current ? 1 : 0);
       
       setCurrentVideo(data.current);
       setQueue(data.queue || []);
@@ -53,6 +78,8 @@ export default function Splash() {
       if (data.current && data.current.videoId !== currentVideoIdRef.current) {
         currentVideoIdRef.current = data.current.videoId;
         loadVideo(data.current.videoId);
+        // Update activity time when a new video starts
+        lastActivityTimeRef.current = Date.now();
       } else if (!data.current && currentVideoIdRef.current) {
         // Queue is empty - clear the player
         currentVideoIdRef.current = null;
@@ -64,6 +91,12 @@ export default function Splash() {
             // Ignore errors when stopping player
           }
         }
+      }
+      
+      // Reset activity time if queue length increased (user added a song)
+      if (newQueueLength > oldQueueLength) {
+        console.log('Queue length increased, resetting activity timer');
+        lastActivityTimeRef.current = Date.now();
       }
       
       setIsLoading(false);
@@ -205,11 +238,40 @@ export default function Splash() {
 
     return () => {
       clearInterval(interval);
+      if (autoEnqueueTimeoutRef.current) {
+        clearTimeout(autoEnqueueTimeoutRef.current);
+      }
       if (playerRef.current && playerRef.current.destroy) {
         playerRef.current.destroy();
       }
     };
   }, []);
+
+  // Check for idle time and auto-enqueue if needed
+  useEffect(() => {
+    const checkIdleTime = () => {
+      const idleTime = Date.now() - lastActivityTimeRef.current;
+      const threeMinutes = 3 * 60 * 1000; // 3 minutes in milliseconds
+      
+      // If idle for more than 3 minutes and queue is empty, auto-enqueue
+      if (idleTime >= threeMinutes && !currentVideo && queue.length === 0) {
+        console.log('Idle for 3+ minutes with empty queue, auto-enqueueing...');
+        autoEnqueueSong();
+        // Reset the activity time to prevent immediate re-enqueueing
+        lastActivityTimeRef.current = Date.now();
+      }
+    };
+
+    // Check immediately
+    checkIdleTime();
+
+    // Check for idle time every 30 seconds
+    const idleCheckInterval = setInterval(checkIdleTime, 30000);
+
+    return () => {
+      clearInterval(idleCheckInterval);
+    };
+  }, [currentVideo, queue]);
 
   return (
     <>
@@ -377,12 +439,14 @@ export default function Splash() {
           <div className="w-full px-8">
             {currentVideo ? (
               <div className="flex gap-6 items-stretch">
-                {/* Logo */}
+                {/* Logo - Click to add random song */}
                 <div className="flex-shrink-0 flex items-center">
                   <img 
                     src="/link-ventures.png" 
                     alt="Link Ventures" 
-                    className="h-20 w-auto"
+                    className="h-20 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={autoEnqueueSong}
+                    title="Click to add a random Christmas song"
                   />
                 </div>
                 
@@ -425,12 +489,14 @@ export default function Splash() {
               </div>
             ) : (
               <div className="flex gap-6 items-center">
-                {/* Logo */}
+                {/* Logo - Click to add random song */}
                 <div className="flex-shrink-0">
                   <img 
                     src="/link-ventures.png" 
                     alt="Link Ventures" 
-                    className="h-20 w-auto"
+                    className="h-20 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={autoEnqueueSong}
+                    title="Click to add a random Christmas song"
                   />
                 </div>
                 
