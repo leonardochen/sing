@@ -2,7 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
 
-const QUEUE_FILE_PATH = path.join(process.cwd(), 'queue.txt');
+// Use /app/data directory in production (Docker), fallback to cwd for local dev
+const DATA_DIR = process.env.NODE_ENV === 'production' 
+  ? '/app/data' 
+  : process.cwd();
+const QUEUE_FILE_PATH = path.join(DATA_DIR, 'queue.txt');
 
 export interface QueueEntry {
   id: string;
