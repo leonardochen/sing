@@ -35,6 +35,9 @@ export default function Splash() {
   const [errorType, setErrorType] = useState<'embedding' | 'other'>('other');
   const [qrCodeUrl, setQrCodeUrl] = useState('http://sing.cogo1k.com/add');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [idleTimerMinutes, setIdleTimerMinutes] = useState(3);
+  const [timeUntilAutoEnqueue, setTimeUntilAutoEnqueue] = useState<number | null>(null);
   const playerRef = useRef<any>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const currentVideoIdRef = useRef<string | null>(null);
@@ -251,11 +254,19 @@ export default function Splash() {
   useEffect(() => {
     const checkIdleTime = () => {
       const idleTime = Date.now() - lastActivityTimeRef.current;
-      const threeMinutes = 3 * 60 * 1000; // 3 minutes in milliseconds
+      const idleThreshold = idleTimerMinutes * 60 * 1000; // Convert minutes to milliseconds
       
-      // If idle for more than 3 minutes and queue is empty, auto-enqueue
-      if (idleTime >= threeMinutes && !currentVideo && queue.length === 0) {
-        console.log('Idle for 3+ minutes with empty queue, auto-enqueueing...');
+      // Update countdown
+      if (!currentVideo && queue.length === 0) {
+        const remaining = idleThreshold - idleTime;
+        setTimeUntilAutoEnqueue(remaining > 0 ? Math.ceil(remaining / 1000) : 0);
+      } else {
+        setTimeUntilAutoEnqueue(null);
+      }
+      
+      // If idle for more than threshold and queue is empty, auto-enqueue
+      if (idleTime >= idleThreshold && !currentVideo && queue.length === 0) {
+        console.log(`Idle for ${idleTimerMinutes}+ minutes with empty queue, auto-enqueueing...`);
         autoEnqueueSong();
         // Reset the activity time to prevent immediate re-enqueueing
         lastActivityTimeRef.current = Date.now();
@@ -265,13 +276,13 @@ export default function Splash() {
     // Check immediately
     checkIdleTime();
 
-    // Check for idle time every 30 seconds
-    const idleCheckInterval = setInterval(checkIdleTime, 30000);
+    // Check for idle time every second for countdown accuracy
+    const idleCheckInterval = setInterval(checkIdleTime, 1000);
 
     return () => {
       clearInterval(idleCheckInterval);
     };
-  }, [currentVideo, queue]);
+  }, [currentVideo, queue, idleTimerMinutes]);
 
   return (
     <>
@@ -508,6 +519,117 @@ export default function Splash() {
             )}
           </div>
         </div>
+
+        {/* Settings Button - Lower Right */}
+        <div className="fixed bottom-6 right-6 flex flex-col items-end gap-2">
+          {/* Countdown Timer */}
+          {timeUntilAutoEnqueue !== null && timeUntilAutoEnqueue > 0 && (
+            <div className="bg-gray-800 text-white px-3 py-1 rounded-full text-xs shadow-lg">
+              Auto-DJ in {timeUntilAutoEnqueue < 60 
+                ? `${timeUntilAutoEnqueue}s`
+                : `${Math.floor(timeUntilAutoEnqueue / 60)}:${String(timeUntilAutoEnqueue % 60).padStart(2, '0')}`
+              }
+            </div>
+          )}
+          
+          {/* Gear Button */}
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="bg-gray-800 hover:bg-gray-700 text-white p-4 rounded-full shadow-lg transition-all duration-200 transform hover:scale-110"
+            title="Settings"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Settings Modal */}
+        {showSettings && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowSettings(false)}>
+            <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-white">Settings</h2>
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="text-gray-400 hover:text-white text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-white text-sm font-semibold mb-2">
+                    Auto-DJ Idle Timer (minutes)
+                  </label>
+                  <p className="text-gray-400 text-xs mb-3">
+                    Time to wait before automatically adding a song when the queue is empty
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="number"
+                      min="0.5"
+                      max="60"
+                      step="0.5"
+                      value={idleTimerMinutes}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        if (val >= 0.5 && val <= 60) {
+                          setIdleTimerMinutes(val);
+                          lastActivityTimeRef.current = Date.now(); // Reset timer
+                        }
+                      }}
+                      className="bg-gray-700 text-white px-4 py-2 rounded-lg w-24 text-center"
+                    />
+                    <span className="text-gray-300">minutes</span>
+                  </div>
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    <button
+                      onClick={() => {
+                        setIdleTimerMinutes(0.5);
+                        lastActivityTimeRef.current = Date.now(); // Reset timer
+                      }}
+                      className={`px-3 py-1 rounded text-sm ${
+                        idleTimerMinutes === 0.5
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      30s
+                    </button>
+                    {[1, 3, 5, 10].map((minutes) => (
+                      <button
+                        key={minutes}
+                        onClick={() => {
+                          setIdleTimerMinutes(minutes);
+                          lastActivityTimeRef.current = Date.now(); // Reset timer
+                        }}
+                        className={`px-3 py-1 rounded text-sm ${
+                          idleTimerMinutes === minutes
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`}
+                      >
+                        {minutes}m
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-2 px-6 rounded-lg transition-all duration-200"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
