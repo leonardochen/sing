@@ -33,7 +33,7 @@ export default function Splash() {
   const [isLoading, setIsLoading] = useState(true);
   const [playerError, setPlayerError] = useState(false);
   const [errorType, setErrorType] = useState<'embedding' | 'other'>('other');
-  const [qrCodeUrl, setQrCodeUrl] = useState('https://sing.cogo1k.com/add');
+  const [qrCodeUrl, setQrCodeUrl] = useState('http://sing.cogo1k.com/add');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const playerRef = useRef<any>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
