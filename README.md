@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎤 Karaoke Playlist Manager
+
+A Next.js application for managing a karaoke queue with YouTube video playback.
+
+## Features
+
+- **📺 Splash Page (`/splash`)**: Displays and automatically plays YouTube videos from the queue
+  - Full-screen video player with YouTube IFrame API
+  - Automatically advances to next video when current one finishes
+  - Polls for new videos every 5 seconds
+  - Shows current singer name and number of songs up next
+  
+- **➕ Add Page (`/add`)**: Simple form to add songs to the queue
+  - Submit YouTube URL and your name
+  - Videos are added to the end of the queue
+  - Beautiful gradient UI with form validation
+
+## How It Works
+
+1. Videos are stored in a `queue.txt` file (one JSON object per line)
+2. The splash page plays the first video in the queue
+3. When a video finishes playing, it's automatically removed from the queue
+4. The next video starts playing automatically
+5. Users can add new videos via the `/add` page
 
 ## Getting Started
 
-First, run the development server:
+### Install Dependencies
+
+```bash
+npm install
+```
+
+### Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) - it will redirect to `/splash`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Main Display**: Navigate to `/splash` (or just `/`) to show the video player
+2. **Add Songs**: Navigate to `/add` to submit new songs to the queue
 
-## Learn More
+## API Endpoints
 
-To learn more about Next.js, take a look at the following resources:
+- `GET /api/queue/current` - Get current video and queue info
+- `POST /api/queue/add` - Add a video to the queue
+  ```json
+  {
+    "youtubeUrl": "https://www.youtube.com/watch?v=...",
+    "userName": "John Doe"
+  }
+  ```
+- `DELETE /api/queue/remove` - Remove current video from queue
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+/pages
+  /api/queue
+    current.ts      # Get current video endpoint
+    add.ts          # Add video endpoint
+    remove.ts       # Remove video endpoint
+  splash.tsx        # Video player page
+  add.tsx           # Add song form page
+  index.tsx         # Redirect to splash
+  _app.tsx          # App wrapper
+/lib
+  queue.ts          # Queue management functions
+/styles
+  globals.css       # Global styles (Tailwind)
+queue.txt           # Queue storage (auto-created)
+```
 
-## Deploy on Vercel
+## Queue File Format
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The `queue.txt` file stores one JSON object per line:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```json
+{"id":"uuid","youtubeUrl":"https://youtube.com/watch?v=xyz","videoId":"xyz","userName":"John","addedAt":"2025-12-15T10:30:00Z"}
+```
+
+## Supported YouTube URL Formats
+
+- `https://www.youtube.com/watch?v=VIDEO_ID`
+- `https://youtu.be/VIDEO_ID`
+- `https://www.youtube.com/embed/VIDEO_ID`
+
+## Technology Stack
+
+- **Next.js** - React framework with API routes
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first styling
+- **YouTube IFrame API** - Video player control and event handling
+
+## Building for Production
+
+```bash
+npm run build
+npm start
+```
+
+## Notes
+
+- Videos are removed from the queue after playing (no history tracking)
+- The queue file is created automatically when the first video is added
+- The splash page should be displayed on a screen/TV for karaoke participants
+- The add page can be accessed by participants on their phones/devices
