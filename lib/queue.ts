@@ -138,6 +138,15 @@ export async function addToQueue(youtubeUrl: string, userName: string): Promise<
   queue.push(entry);
   writeQueue(queue);
   
+  // Log the addition with all relevant details
+  console.log(`🎵 Song added to queue:`, {
+    title,
+    videoId,
+    addedBy: userName,
+    position: queue.length,
+    timestamp: entry.addedAt,
+  });
+  
   return entry;
 }
 
