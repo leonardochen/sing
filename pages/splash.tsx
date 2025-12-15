@@ -33,7 +33,7 @@ export default function Splash() {
   const [isLoading, setIsLoading] = useState(true);
   const [playerError, setPlayerError] = useState(false);
   const [errorType, setErrorType] = useState<'embedding' | 'other'>('other');
-  const [qrCodeUrl, setQrCodeUrl] = useState('/add');
+  const [qrCodeUrl, setQrCodeUrl] = useState('https://sing.cogo1k.com/add');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const playerRef = useRef<any>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
@@ -177,7 +177,7 @@ export default function Splash() {
 
   // Set QR code URL on client side
   useEffect(() => {
-    setQrCodeUrl(`${window.location.origin}/add`);
+    setQrCodeUrl('https://sing.cogo1k.com/add');
   }, []);
 
   // Load YouTube IFrame API
@@ -286,7 +286,7 @@ export default function Splash() {
           </div>
 
           {/* Queue Sidebar */}
-          <div className="w-40 bg-gray-800 border-l-4 border-purple-500 overflow-y-auto flex flex-col">
+          <div className="w-80 bg-gray-800 border-l-4 border-purple-500 overflow-y-auto flex flex-col">
             <div className="p-2 bg-gradient-to-r from-purple-600 to-pink-600">
               <h3 className="text-sm font-bold text-white text-center">Up Next</h3>
             </div>
@@ -350,19 +350,23 @@ export default function Splash() {
             </div>
 
             {/* QR Code */}
-            <div className="p-2 mt-auto">
-              <div className="bg-white p-2 rounded-lg">
-                <div className="text-center mb-1">
-                  <p className="text-xs font-bold text-gray-800">Add a Song!</p>
+            <div className="p-3 mt-auto">
+              <div className="bg-white p-3 rounded-lg">
+                <div className="text-center mb-2">
+                  <p className="text-sm font-bold text-gray-800">Add a Song!</p>
                 </div>
-                <QRCodeSVG 
-                  value={qrCodeUrl}
-                  size={120}
-                  level="H"
-                  includeMargin={true}
-                  bgColor="#ffffff"
-                  fgColor="#7c3aed"
-                />
+                <div className="w-full flex justify-center">
+                  <QRCodeSVG 
+                    value={qrCodeUrl}
+                    size={280}
+                    level="H"
+                    includeMargin={false}
+                    bgColor="#ffffff"
+                    fgColor="#7c3aed"
+                    className="w-full h-auto"
+                    style={{ maxWidth: '280px' }}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -370,10 +374,20 @@ export default function Splash() {
 
         {/* Info Bar */}
         <div className="bg-gray-800 text-white p-8">
-          <div className="max-w-6xl mx-auto">
+          <div className="w-full px-8">
             {currentVideo ? (
-              <div className="flex justify-between items-center">
-                <div>
+              <div className="flex gap-6 items-stretch">
+                {/* Logo */}
+                <div className="flex-shrink-0 flex items-center">
+                  <img 
+                    src="/link-ventures.png" 
+                    alt="Link Ventures" 
+                    className="h-20 w-auto"
+                  />
+                </div>
+                
+                {/* Current Song - Takes remaining space */}
+                <div className="flex-1">
                   <h2 className="text-3xl font-bold mb-2">🎵 Now Playing</h2>
                   <p className="text-xl text-gray-300 mb-1">
                     <span className="font-bold text-white">{currentVideo.title}</span>
@@ -382,11 +396,13 @@ export default function Splash() {
                     Requested by: <span className="font-semibold text-pink-400">{currentVideo.userName}</span>
                   </p>
                 </div>
-                <div className="text-right flex flex-col items-end gap-3">
+                
+                {/* Next Song - Fixed width */}
+                <div className="w-80 flex flex-col justify-center items-center border-l-4 border-purple-500 pl-6">
                   {queue.length > 0 ? (
                     <>
-                      <div>
-                        <p className="text-sm text-gray-400 mb-1">Up Next:</p>
+                      <div className="text-center mb-3">
+                        <p className="text-sm text-gray-400 mb-2">Up Next:</p>
                         <p className="text-lg text-white font-bold">{queue[0].title}</p>
                         <p className="text-sm text-pink-400">{queue[0].userName}</p>
                       </div>
@@ -408,9 +424,20 @@ export default function Splash() {
                 </div>
               </div>
             ) : (
-              <div className="text-center">
-                <h2 className="text-3xl font-bold mb-2">Queue is Empty</h2>
-                <p className="text-xl text-gray-400">Waiting for songs to be added...</p>
+              <div className="flex gap-6 items-center">
+                {/* Logo */}
+                <div className="flex-shrink-0">
+                  <img 
+                    src="/link-ventures.png" 
+                    alt="Link Ventures" 
+                    className="h-20 w-auto"
+                  />
+                </div>
+                
+                <div className="flex-1 text-center">
+                  <h2 className="text-3xl font-bold mb-2">Queue is Empty</h2>
+                  <p className="text-xl text-gray-400">Waiting for songs to be added...</p>
+                </div>
               </div>
             )}
           </div>
