@@ -8,6 +8,7 @@ export interface QueueEntry {
   id: string;
   youtubeUrl: string;
   videoId: string;
+  title: string;
   userName: string;
   addedAt: string;
 }
@@ -87,19 +88,44 @@ export function getAllVideos(): QueueEntry[] {
 }
 
 /**
+ * Fetches video metadata from YouTube oEmbed API
+ */
+export async function fetchVideoMetadata(youtubeUrl: string): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(youtubeUrl)}&format=json`
+    );
+    
+    if (!response.ok) {
+      return null;
+    }
+    
+    const data = await response.json();
+    return data.title || null;
+  } catch (error) {
+    console.error('Error fetching video metadata:', error);
+    return null;
+  }
+}
+
+/**
  * Adds a new video to the end of the queue
  */
-export function addToQueue(youtubeUrl: string, userName: string): QueueEntry {
+export async function addToQueue(youtubeUrl: string, userName: string): Promise<QueueEntry> {
   const videoId = extractVideoId(youtubeUrl);
   
   if (!videoId) {
     throw new Error('Invalid YouTube URL');
   }
   
+  // Try to fetch the video title from oEmbed
+  const title = await fetchVideoMetadata(youtubeUrl) || videoId;
+  
   const entry: QueueEntry = {
     id: randomUUID(),
     youtubeUrl,
     videoId,
+    title,
     userName,
     addedAt: new Date().toISOString(),
   };
@@ -132,5 +158,21 @@ export function removeCurrentVideo(): QueueEntry | null {
  */
 export function getQueueLength(): number {
   return readQueue().length;
+}
+
+/**
+ * Deletes a specific video from the queue by ID
+ */
+export function deleteQueueEntry(id: string): boolean {
+  const queue = readQueue();
+  const initialLength = queue.length;
+  const updatedQueue = queue.filter(entry => entry.id !== id);
+  
+  if (updatedQueue.length === initialLength) {
+    return false; // Entry not found
+  }
+  
+  writeQueue(updatedQueue);
+  return true;
 }
 

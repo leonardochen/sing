@@ -6,6 +6,7 @@ interface QueueEntry {
   id: string;
   youtubeUrl: string;
   videoId: string;
+  title: string;
   userName: string;
   addedAt: string;
 }
@@ -33,6 +34,7 @@ export default function Splash() {
   const [playerError, setPlayerError] = useState(false);
   const [errorType, setErrorType] = useState<'embedding' | 'other'>('other');
   const [qrCodeUrl, setQrCodeUrl] = useState('/add');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const playerRef = useRef<any>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const currentVideoIdRef = useRef<string | null>(null);
@@ -96,6 +98,29 @@ export default function Splash() {
   const handleNextSong = async () => {
     setPlayerError(false);
     await removeCurrentVideo();
+  };
+
+  // Handle delete queue entry
+  const handleDeleteEntry = async (id: string) => {
+    try {
+      const response = await fetch('/api/queue/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      });
+
+      if (response.ok) {
+        // Refresh the queue
+        await fetchCurrentVideo();
+        setDeleteConfirmId(null);
+      } else {
+        console.error('Failed to delete entry');
+      }
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+    }
   };
 
   // Initialize YouTube Player
@@ -256,12 +281,12 @@ export default function Splash() {
           </div>
 
           {/* Queue Sidebar */}
-          <div className="w-40 bg-gray-800 border-l-4 border-purple-500 overflow-y-auto">
+          <div className="w-40 bg-gray-800 border-l-4 border-purple-500 overflow-y-auto flex flex-col">
             <div className="p-2 bg-gradient-to-r from-purple-600 to-pink-600">
               <h3 className="text-sm font-bold text-white text-center">Up Next</h3>
             </div>
             
-            <div className="p-2 space-y-2">
+            <div className="p-2 space-y-2 flex-1">
               {queue.length === 0 ? (
                 <div className="text-center text-gray-400 py-4">
                   <p className="text-xs">Empty</p>
@@ -270,43 +295,111 @@ export default function Splash() {
                 queue.map((entry, index) => (
                   <div 
                     key={entry.id} 
-                    className="bg-gray-700 rounded p-2 border-l-2 border-pink-500 hover:bg-gray-600 transition-colors"
+                    className="bg-gray-700 rounded p-2 border-l-2 border-pink-500 hover:bg-gray-600 transition-colors relative"
                   >
-                    <div className="flex items-start gap-1">
-                      <div className="flex-shrink-0 w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center font-bold text-white text-xs">
-                        {index + 1}
+                    {deleteConfirmId === entry.id ? (
+                      // Confirmation UI
+                      <div className="flex flex-col gap-2">
+                        <p className="text-white text-xs font-semibold text-center">Delete?</p>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => handleDeleteEntry(entry.id)}
+                            className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs py-1 px-2 rounded font-semibold"
+                          >
+                            Yes
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmId(null)}
+                            className="flex-1 bg-gray-600 hover:bg-gray-500 text-white text-xs py-1 px-2 rounded font-semibold"
+                          >
+                            No
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs font-semibold truncate">
-                          {entry.userName}
-                        </p>
-                        <p className="text-gray-400 text-xs truncate" title={entry.videoId}>
-                          {entry.videoId.substring(0, 8)}
-                        </p>
+                    ) : (
+                      // Normal display
+                      <div className="flex items-start gap-1">
+                        <div className="flex-shrink-0 w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center font-bold text-white text-xs">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-xs font-semibold truncate">
+                            {entry.userName}
+                          </p>
+                          <p className="text-gray-400 text-xs truncate" title={entry.title}>
+                            {entry.title}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setDeleteConfirmId(entry.id)}
+                          className="flex-shrink-0 w-5 h-5 bg-red-600 hover:bg-red-700 text-white rounded flex items-center justify-center text-xs font-bold transition-colors"
+                          title="Delete entry"
+                        >
+                          ×
+                        </button>
                       </div>
-                    </div>
+                    )}
                   </div>
                 ))
               )}
+            </div>
+
+            {/* QR Code */}
+            <div className="p-2 mt-auto">
+              <div className="bg-white p-2 rounded-lg">
+                <div className="text-center mb-1">
+                  <p className="text-xs font-bold text-gray-800">Add a Song!</p>
+                </div>
+                <QRCodeSVG 
+                  value={qrCodeUrl}
+                  size={120}
+                  level="H"
+                  includeMargin={true}
+                  bgColor="#ffffff"
+                  fgColor="#7c3aed"
+                />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Info Bar */}
-        <div className="bg-gray-800 text-white p-8 relative">
+        <div className="bg-gray-800 text-white p-8">
           <div className="max-w-6xl mx-auto">
             {currentVideo ? (
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-3xl font-bold mb-2">🎵 Now Playing</h2>
-                  <p className="text-xl text-gray-300">
+                  <p className="text-xl text-gray-300 mb-1">
+                    <span className="font-bold text-white">{currentVideo.title}</span>
+                  </p>
+                  <p className="text-lg text-gray-400">
                     Requested by: <span className="font-semibold text-pink-400">{currentVideo.userName}</span>
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-xl text-gray-400">
-                    Up next: <span className="text-3xl font-bold text-white">{upNext}</span> {upNext === 1 ? 'song' : 'songs'}
-                  </p>
+                <div className="text-right flex flex-col items-end gap-3">
+                  {queue.length > 0 ? (
+                    <>
+                      <div>
+                        <p className="text-sm text-gray-400 mb-1">Up Next:</p>
+                        <p className="text-lg text-white font-bold">{queue[0].title}</p>
+                        <p className="text-sm text-pink-400">{queue[0].userName}</p>
+                      </div>
+                      <button
+                        onClick={handleNextSong}
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg"
+                      >
+                        ⏭️ Next Song
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={handleNextSong}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg"
+                    >
+                      ⏭️ Next Song
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
@@ -315,22 +408,6 @@ export default function Splash() {
                 <p className="text-xl text-gray-400">Waiting for songs to be added...</p>
               </div>
             )}
-          </div>
-
-          {/* QR Code Footer */}
-          <div className="absolute bottom-4 right-4 bg-white p-4 rounded-2xl shadow-2xl border-4 border-purple-500">
-            <div className="text-center mb-2">
-              <p className="text-sm font-bold text-gray-800">Add a Song!</p>
-              <p className="text-xs text-gray-600">Scan to join</p>
-            </div>
-            <QRCodeSVG 
-              value={qrCodeUrl}
-              size={128}
-              level="H"
-              includeMargin={true}
-              bgColor="#ffffff"
-              fgColor="#7c3aed"
-            />
           </div>
         </div>
       </div>

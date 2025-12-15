@@ -1,18 +1,11 @@
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent } from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
-import { QRCodeSVG } from 'qrcode.react';
 
 export default function Add() {
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [userName, setUserName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [qrCodeUrl, setQrCodeUrl] = useState('/add');
-
-  useEffect(() => {
-    setQrCodeUrl(`${window.location.origin}/add`);
-  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -130,31 +123,6 @@ export default function Add() {
               {isSubmitting ? '⏳ Adding...' : '🎵 Add to Queue'}
             </button>
           </form>
-
-          <div className="mt-8 text-center">
-            <Link
-              href="/splash"
-              className="inline-block text-purple-600 hover:text-purple-700 font-bold text-lg transition-all hover:scale-110 transform"
-            >
-              ← Back to Now Playing
-            </Link>
-          </div>
-        </div>
-
-        {/* QR Code Footer */}
-        <div className="fixed bottom-6 right-6 bg-white p-5 rounded-2xl shadow-2xl border-4 border-purple-500">
-          <div className="text-center mb-2">
-            <p className="text-sm font-bold text-gray-800">Add a Song!</p>
-            <p className="text-xs text-gray-600">Scan to join</p>
-          </div>
-          <QRCodeSVG 
-            value={qrCodeUrl}
-            size={128}
-            level="H"
-            includeMargin={true}
-            bgColor="#ffffff"
-            fgColor="#7c3aed"
-          />
         </div>
       </div>
     </>
